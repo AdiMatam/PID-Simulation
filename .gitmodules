@@ -1,0 +1,3 @@
+[submodule "SF-Core"]
+	path = SF-Core
+	url = https://github.com/AdiMatam/SF-Core.git
