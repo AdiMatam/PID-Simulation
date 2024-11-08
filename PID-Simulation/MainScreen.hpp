@@ -10,23 +10,28 @@ public:
 
 	void setupGeometry();
 	float calculateDistance();
-	void applyInstantaneousForce();
+	void applyInstantaneousForce(float accel);
 	float controlScheme();
 
 private:
 	sf::RectangleShape m_Yoke;
 	sf::RectangleShape m_Ground;
+	sf::RectangleShape m_RefLine;
 	float m_RefDist;
 	float m_CurDist;
 	float m_InitDist;
 
 	float	m_KP;
+	float	m_KD;
+	float	m_KI;
+	float m_PrevErr;
 
 	float m_Dy;
-	float m_CurrentAccel;
+	float m_AppliedAccel;
+	float m_GravityAccel;
 
 	// float m_Blah;
-	// int COUNT;
+	int COUNT;
 
 	sf::Clock m_Clock;
 	float m_RefreshRate;

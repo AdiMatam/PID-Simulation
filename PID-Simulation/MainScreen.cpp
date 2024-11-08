@@ -4,26 +4,31 @@ MainScreen::MainScreen() {
 	std::cout << "Main Screen Loaded\n";
 
 	m_RefDist = 400.;
-	m_InitDist = 100.;
-	m_KP = 0.01;
+	m_InitDist = 250.;
+	m_KP = 0.2;
+	m_KD = 2.0;
+	m_KI = 5.0;
 
 	m_RefreshRate = 10.;	
 	m_Dy = 0.f;
-	m_CurrentAccel = 2.5f;
+	m_AppliedAccel = 0.0f;
+	m_GravityAccel = 2.5f;
+
+	m_PrevErr = 0.f;
 
 	setupGeometry();
 	// m_Blah =0.f;
-	// COUNT = 0;
+	COUNT = 0;
 }
 
 void MainScreen::onEvent(const sf::Event& ev) {
 	BaseScreen::onEvent(ev);
-	if (keyPressed(ev, sf::Keyboard::Down)) {
-		m_CurrentAccel += 1.0f;
-	}
-	else if (keyPressed(ev, sf::Keyboard::Up)) {
-		m_CurrentAccel -= 1.0f;
-	}
+	// if (keyPressed(ev, sf::Keyboard::Down)) {
+		// m_CurrentAccel += 1.0f;
+	// }
+	// else if (keyPressed(ev, sf::Keyboard::Up)) {
+		// m_CurrentAccel -= 1.0f;
+	// }
 }
 
 void MainScreen::onUpdate() {
@@ -34,12 +39,13 @@ void MainScreen::onUpdate() {
 		m_Clock.restart();
 		
 		m_CurDist = this->calculateDistance();
-		m_CurrentAccel = this->controlScheme();
-		this->applyInstantaneousForce();
+		m_AppliedAccel = this->controlScheme();
+		this->applyInstantaneousForce(m_GravityAccel + m_AppliedAccel);
 
-		std::cout << std::fixed << std::setprecision(2)    // Fixed-point notation with 2 decimal places
-			<< std::setw(12) << m_CurrentAccel
-			<< std::setw(12) << m_CurDist << '\n';
+		// std::cout << std::fixed << std::setprecision(2)    // Fixed-point notation with 2 decimal places
+			// << std::setw(12) << m_AppliedAccel
+			// << std::setw(12) << m_CurDist 
+			// << std::setw(12) << m_CurDist - m_RefDist << '\n';
 
 		// if (COUNT == 100) {
 			// std::cout << m_Blah << std::endl;
@@ -53,20 +59,36 @@ void MainScreen::onUpdate() {
 	}
 
 	window->draw(m_Ground);
+	window->draw(m_RefLine);
 	window->draw(m_Yoke);
 
 	window->display();
 }
 
 float MainScreen::controlScheme() {
-	// CLAMPED ACCELERATION TO 2.5
+	// CLAMPED ACCELERATION
+	float accel;
 	float err = m_CurDist - m_RefDist;
-	float accel = m_KP * err;
-	accel = clamp(accel, -2.5f, 2.5f);
+	float derr = err - m_PrevErr;
+	float ierr = 0.f;
+	
+	if (abs(derr) < 0.1)  {
+		ierr = m_PrevErr + err;
+		ierr = clamp(ierr, -1.f, 1.f);
+	}
+	else {
+		printf("hmm: %d\n", COUNT);
+		COUNT++;
+	}
+	accel = m_KP * err + m_KD * derr + m_KI * ierr;
+	m_PrevErr = err; 
+
+	float bound = m_GravityAccel * 4.f;
+	accel = clamp(accel, -bound, bound);
 	return accel;
 }
 
-void MainScreen::applyInstantaneousForce() {
+void MainScreen::applyInstantaneousForce(float accel) {
 	// INVALID CASE TO BE HANDLED BY IF
 	if (m_CurDist <= 0.f) {
 		m_Dy = 0;		
@@ -78,7 +100,7 @@ void MainScreen::applyInstantaneousForce() {
 
 	// try 5 pixel/s^2
     float timeInterval = m_RefreshRate / 1000.0f;
-    m_Dy += (m_CurrentAccel * timeInterval);
+    m_Dy += (accel * timeInterval);
 
 	// m_Blah += m_Dy;
 	m_Yoke.move(Vec2f(0.0f, m_Dy));
@@ -106,6 +128,11 @@ void MainScreen::setupGeometry() {
 	m_Yoke.setPosition(REL_VIEW_X(0.5), gnd.y - m_InitDist);
 
 	m_CurDist = this->calculateDistance();
+
+	m_RefLine.setFillColor(sf::Color::Blue);;
+	m_RefLine.setSize(REL_VIEW(1.0f, 0.01f));
+	setOrigin(&m_RefLine, m_RefLine.getGlobalBounds(), Origin::Center);
+	m_RefLine.setPosition(REL_VIEW_X(0.5f), gnd.y - m_RefDist);
 }
 
 
