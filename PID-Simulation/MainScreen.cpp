@@ -71,15 +71,18 @@ float MainScreen::controlScheme() {
 	float err = m_CurDist - m_RefDist;
 	float derr = err - m_PrevErr;
 	float ierr = 0.f;
+
+	std::cout << derr << std::endl;
 	
 	if (abs(derr) < 0.1)  {
 		ierr = m_PrevErr + err;
-		ierr = clamp(ierr, -1.f, 1.f);
+		ierr = clamp(ierr, -0.5f, 0.5f);
 	}
-	else {
-		printf("hmm: %d\n", COUNT);
-		COUNT++;
-	}
+	// else {
+		// printf("hmm: %d\n", COUNT);
+		// COUNT++;
+	// }
+
 	accel = m_KP * err + m_KD * derr + m_KI * ierr;
 	m_PrevErr = err; 
 
