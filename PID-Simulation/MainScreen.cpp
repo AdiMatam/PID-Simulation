@@ -42,10 +42,10 @@ void MainScreen::onUpdate() {
 		m_AppliedAccel = this->controlScheme();
 		this->applyInstantaneousForce(m_GravityAccel + m_AppliedAccel);
 
-		// std::cout << std::fixed << std::setprecision(2)    // Fixed-point notation with 2 decimal places
-			// << std::setw(12) << m_AppliedAccel
-			// << std::setw(12) << m_CurDist 
-			// << std::setw(12) << m_CurDist - m_RefDist << '\n';
+		std::cout << std::fixed << std::setprecision(2)    // Fixed-point notation with 2 decimal places
+			<< std::setw(12) << m_AppliedAccel
+			<< std::setw(12) << m_CurDist 
+			<< std::setw(12) << m_CurDist - m_RefDist << '\n';
 
 		// if (COUNT == 100) {
 			// std::cout << m_Blah << std::endl;
@@ -72,8 +72,6 @@ float MainScreen::controlScheme() {
 	float derr = err - m_PrevErr;
 	float ierr = 0.f;
 
-	std::cout << derr << std::endl;
-	
 	if (abs(derr) < 0.1)  {
 		ierr = m_PrevErr + err;
 		ierr = clamp(ierr, -0.5f, 0.5f);
