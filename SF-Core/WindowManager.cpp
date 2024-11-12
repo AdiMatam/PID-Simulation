@@ -48,8 +48,10 @@ void WindowManager::run() {
 		while (m_Window.pollEvent(ev)) {
 			if (ev.type == sf::Event::Closed)
 				this->close();
-			else 
+			else {
 				toRender->onEvent(ev);
+				m_Gui.handleEvent(ev);
+			} 
 		}
 		toRender->onUpdate();
 	}

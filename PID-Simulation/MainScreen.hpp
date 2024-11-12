@@ -8,7 +8,9 @@ public:
 	void onEvent(const sf::Event& ev) override;
 	void onUpdate() override;
 
-	void setupGeometry();
+	void setupGeometry() override;
+	void setupWidgets() override;
+
 	float calculateDistance();
 	void applyInstantaneousForce(float accel);
 	float controlScheme();
@@ -17,7 +19,7 @@ private:
 	sf::RectangleShape m_Yoke;
 	sf::RectangleShape m_Ground;
 	sf::RectangleShape m_RefLine;
-	Vec2f m_GroundTop;
+	Vec2f m_GroundNorth;
 
 	float m_RefDist;
 	float m_CurDist;
@@ -35,11 +37,11 @@ private:
 	float m_AppliedAccel;
 	float m_GravityAccel;
 
-	sf::Font m_Font;
-	sf::Text m_LiveDistance;
+	tg::Font m_Font;
 
 	// float m_Blah;
 	int COUNT;
+
 	sf::Clock m_Clock;
 	float m_RefreshRate;
 

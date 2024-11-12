@@ -16,11 +16,10 @@ MainScreen::MainScreen() {
 
 	m_PrevErr = 0.f;
 
-	if(!m_Font.loadFromFile("../../font/Barlow-Regular.ttf")) {
-		std::cout << "FONT DIDN'T LOAD\n";
-	}
+	m_Font = tg::Font("../../font/Barlow-Regular.ttf");
 
 	setupGeometry();
+	setupWidgets();
 	// m_Blah =0.f;
 	COUNT = 0;
 	m_Paused = true;
@@ -41,7 +40,7 @@ void MainScreen::onEvent(const sf::Event& ev) {
 
 void MainScreen::onUpdate() {
 	sf::RenderWindow* window = App::GetWindowManager(0)->getWindow();
-	window->clear();
+	tg::Gui* gui = App::GetWindowManager(0)->getGui();
 
 	if (m_Clock.getElapsedTime().asMilliseconds() >= m_RefreshRate && !m_Paused) {
 		m_Clock.restart();
@@ -64,13 +63,11 @@ void MainScreen::onUpdate() {
 		// std::cout << yoke.y << std::endl;
 
 		// COUNT++;
-
-		char str[16];
-		sprintf(str, "Y-Pos: %.2f", m_CurDist);
-		m_LiveDistance.setString( sf::String(str) );
 	}
 
 	CallbackManager::Get().Poll(this);
+
+	window->clear();
 
 	if (m_Paused) {
 		window->draw(m_PauseBars[0]);
@@ -80,7 +77,8 @@ void MainScreen::onUpdate() {
 	window->draw(m_Ground);
 	window->draw(m_RefLine);
 	window->draw(m_Yoke);
-	window->draw(m_LiveDistance);
+
+	gui->draw();
 
 	window->display();
 }
@@ -145,8 +143,8 @@ void MainScreen::setupGeometry() {
 	m_Yoke.setSize( Vec2f(REL_VIEW_Y(0.2f), REL_VIEW_Y(0.2f)) );
 	setOrigin(&m_Yoke, m_Yoke.getSize(), Origin::South);
 	
-	m_GroundTop = getCorner(&m_Ground, m_Ground.getGlobalBounds(), Origin::North);
-	m_Yoke.setPosition(REL_VIEW_X(0.5), m_GroundTop.y - m_InitDist);
+	m_GroundNorth = getCorner(&m_Ground, m_Ground.getGlobalBounds(), Origin::North);
+	m_Yoke.setPosition(REL_VIEW_X(0.5), m_GroundNorth.y - m_InitDist);
 
 	m_CurDist = this->calculateDistance();
 
@@ -157,7 +155,7 @@ void MainScreen::setupGeometry() {
 	CallbackManager::Get().Add(
 		Callback(
 			this, &m_RefDist, CallbackTrigger::OnChange,
-			[this]() { m_RefLine.setPosition(REL_VIEW_X(0.5f), m_GroundTop.y - m_RefDist); },
+			[this]() { m_RefLine.setPosition(REL_VIEW_X(0.5f), m_GroundNorth.y - m_RefDist); },
 			true
 		)
 	);
@@ -169,14 +167,72 @@ void MainScreen::setupGeometry() {
 		m_PauseBars[i].setPosition(REL_VIEW(0.02f, 0.02f));
 	}
 	m_PauseBars[1].move(REL_VIEW_X(0.02f), 0.f);
-
-	// select the font
-	m_LiveDistance.setFont(m_Font);
-	m_LiveDistance.setCharacterSize(REL_VIEW_Y(0.05f));
-	m_LiveDistance.setFillColor(sf::Color::White);
-	m_LiveDistance.setPosition(REL_VIEW(0.8f, 0.0f));
-
 }
 
+
+void MainScreen::setupWidgets() {
+	tg::Gui* gui = App::GetWindowManager(0)->getGui();
+	gui->setFont(m_Font);
+	gui->setTextSize(REL_GUI_Y(0.04f));
+
+	auto liveDistLabel = tgui::Label::create();
+	liveDistLabel->setSize(REL_GUI(0.2, 0.07f));
+	liveDistLabel->setPosition(REL_GUI(0.75f, 0.02f));
+	liveDistLabel->getSharedRenderer()->setTextColor(tg::Color::White);
+
+	CallbackManager::Get().Add(
+		Callback(
+			this, &m_CurDist, CallbackTrigger::OnChange,
+			[this,liveDistLabel]() { 
+				char str[32];
+				sprintf(str, "Distance: %.2f", m_CurDist);
+				liveDistLabel->setText(tg::String(str));
+			},
+			true
+		)
+	);
+	gui->add(liveDistLabel);
+
+	auto refDistText = tgui::Label::create();
+	refDistText->setSize(REL_GUI(0.1f, 0.07f));
+	refDistText->setPosition(REL_GUI(0.75f, 0.1f));
+	refDistText->setText("Ref Dist: ");
+	gui->add(refDistText);
+
+	auto refDistEdit = tgui::EditBox::create();
+	refDistEdit->setSize(REL_GUI(0.1f, 0.07f));
+	refDistEdit->setPosition(REL_GUI(0.85f, 0.09f));
+	refDistEdit->onReturnKeyPress([this,refDistEdit]() { 
+		float out;
+		bool worked = refDistEdit->getText().attemptToFloat(out);
+		if (worked) {
+			m_RefDist = out;
+		}
+	});
+
+	CallbackManager::Get().Add(
+		Callback(
+			this, &m_RefDist, CallbackTrigger::OnChange,
+			[this,refDistEdit]() { 
+				char str[16];
+				sprintf(str, "%.2f", m_RefDist);
+				refDistEdit->setText(tg::String(str));
+			},
+			true
+		)
+	);
+	gui->add(refDistEdit);
+
+	{
+		refDistEdit->getSharedRenderer()->setBorderColor(tg::Color::White);
+		refDistEdit->getSharedRenderer()->setBorderColorHover(tg::Color::White);
+		refDistEdit->getSharedRenderer()->setBorderColorFocused(tg::Color::White);
+		refDistEdit->getSharedRenderer()->setBackgroundColor(tg::Color::Transparent);
+		refDistEdit->getSharedRenderer()->setBackgroundColorHover(tg::Color::Transparent);
+		refDistEdit->getSharedRenderer()->setBackgroundColorFocused(tg::Color::Transparent);
+		refDistEdit->getSharedRenderer()->setTextColor(tg::Color::White);
+
+	}
+}
 
 
