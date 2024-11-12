@@ -4,7 +4,7 @@ MainScreen::MainScreen() {
 	std::cout << "Main Screen Loaded\n";
 
 	m_RefDist = 400.;
-	m_InitDist = 250.;
+	m_InitDist = 150.;
 	m_KP = 0.2;
 	m_KD = 2.0;
 	m_KI = 5.0;
@@ -16,13 +16,21 @@ MainScreen::MainScreen() {
 
 	m_PrevErr = 0.f;
 
+	if(!m_Font.loadFromFile("../../font/Barlow-Regular.ttf")) {
+		std::cout << "FONT DIDN'T LOAD\n";
+	}
+
 	setupGeometry();
 	// m_Blah =0.f;
 	COUNT = 0;
+	m_Paused = true;
 }
 
 void MainScreen::onEvent(const sf::Event& ev) {
 	BaseScreen::onEvent(ev);
+	if (keyPressed(ev, sf::Keyboard::Space)) {
+		m_Paused = !m_Paused;
+	}
 	// if (keyPressed(ev, sf::Keyboard::Down)) {
 		// m_CurrentAccel += 1.0f;
 	// }
@@ -35,7 +43,7 @@ void MainScreen::onUpdate() {
 	sf::RenderWindow* window = App::GetWindowManager(0)->getWindow();
 	window->clear();
 
-	if (m_Clock.getElapsedTime().asMilliseconds() >= m_RefreshRate) {
+	if (m_Clock.getElapsedTime().asMilliseconds() >= m_RefreshRate && !m_Paused) {
 		m_Clock.restart();
 		
 		m_CurDist = this->calculateDistance();
@@ -56,11 +64,21 @@ void MainScreen::onUpdate() {
 		// std::cout << yoke.y << std::endl;
 
 		// COUNT++;
+
+		char str[16];
+		sprintf(str, "%.2f", m_CurDist);
+		m_LiveDistance.setString( sf::String(str) );
+	}
+
+	if (m_Paused) {
+		window->draw(m_PauseBars[0]);
+		window->draw(m_PauseBars[1]);
 	}
 
 	window->draw(m_Ground);
 	window->draw(m_RefLine);
 	window->draw(m_Yoke);
+	window->draw(m_LiveDistance);
 
 	window->display();
 }
@@ -134,6 +152,21 @@ void MainScreen::setupGeometry() {
 	m_RefLine.setSize(REL_VIEW(1.0f, 0.01f));
 	setOrigin(&m_RefLine, m_RefLine.getGlobalBounds(), Origin::Center);
 	m_RefLine.setPosition(REL_VIEW_X(0.5f), gnd.y - m_RefDist);
+
+	for (int i = 0; i < 2; i++) {
+		m_PauseBars[i].setFillColor(sf::Color::White);
+		m_PauseBars[i].setSize(REL_VIEW(0.01f, 0.07f));
+		setOrigin(&m_PauseBars[i], m_PauseBars[i].getGlobalBounds(), Origin::North | Origin::West);
+		m_PauseBars[i].setPosition(REL_VIEW(0.02f, 0.02f));
+	}
+	m_PauseBars[1].move(REL_VIEW_X(0.02f), 0.f);
+
+	// select the font
+	m_LiveDistance.setFont(m_Font);
+	m_LiveDistance.setCharacterSize(REL_VIEW_Y(0.05f));
+	m_LiveDistance.setFillColor(sf::Color::White);
+	m_LiveDistance.setPosition(REL_VIEW(0.9f, 0.0f));
+
 }
 
 
