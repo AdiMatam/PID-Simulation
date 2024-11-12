@@ -31,12 +31,12 @@ void MainScreen::onEvent(const sf::Event& ev) {
 	if (keyPressed(ev, sf::Keyboard::Space)) {
 		m_Paused = !m_Paused;
 	}
-	// if (keyPressed(ev, sf::Keyboard::Down)) {
-		// m_CurrentAccel += 1.0f;
-	// }
-	// else if (keyPressed(ev, sf::Keyboard::Up)) {
-		// m_CurrentAccel -= 1.0f;
-	// }
+	if (keyPressed(ev, sf::Keyboard::Down)) {
+		m_RefDist -= 10.0f;
+	}
+	else if (keyPressed(ev, sf::Keyboard::Up)) {
+		m_RefDist += 10.0f;
+	}
 }
 
 void MainScreen::onUpdate() {
@@ -50,10 +50,10 @@ void MainScreen::onUpdate() {
 		m_AppliedAccel = this->controlScheme();
 		this->applyInstantaneousForce(m_GravityAccel + m_AppliedAccel);
 
-		std::cout << std::fixed << std::setprecision(2)    // Fixed-point notation with 2 decimal places
-			<< std::setw(12) << m_AppliedAccel
-			<< std::setw(12) << m_CurDist 
-			<< std::setw(12) << m_CurDist - m_RefDist << '\n';
+		// std::cout << std::fixed << std::setprecision(2)    // Fixed-point notation with 2 decimal places
+			// << std::setw(12) << m_AppliedAccel
+			// << std::setw(12) << m_CurDist 
+			// << std::setw(12) << m_CurDist - m_RefDist << '\n';
 
 		// if (COUNT == 100) {
 			// std::cout << m_Blah << std::endl;
@@ -66,9 +66,11 @@ void MainScreen::onUpdate() {
 		// COUNT++;
 
 		char str[16];
-		sprintf(str, "%.2f", m_CurDist);
+		sprintf(str, "Y-Pos: %.2f", m_CurDist);
 		m_LiveDistance.setString( sf::String(str) );
 	}
+
+	CallbackManager::Get().Poll(this);
 
 	if (m_Paused) {
 		window->draw(m_PauseBars[0]);
@@ -143,15 +145,22 @@ void MainScreen::setupGeometry() {
 	m_Yoke.setSize( Vec2f(REL_VIEW_Y(0.2f), REL_VIEW_Y(0.2f)) );
 	setOrigin(&m_Yoke, m_Yoke.getSize(), Origin::South);
 	
-	Vec2f gnd = getCorner(&m_Ground, m_Ground.getGlobalBounds(), Origin::North);
-	m_Yoke.setPosition(REL_VIEW_X(0.5), gnd.y - m_InitDist);
+	m_GroundTop = getCorner(&m_Ground, m_Ground.getGlobalBounds(), Origin::North);
+	m_Yoke.setPosition(REL_VIEW_X(0.5), m_GroundTop.y - m_InitDist);
 
 	m_CurDist = this->calculateDistance();
 
 	m_RefLine.setFillColor(sf::Color::Blue);;
 	m_RefLine.setSize(REL_VIEW(1.0f, 0.01f));
 	setOrigin(&m_RefLine, m_RefLine.getGlobalBounds(), Origin::Center);
-	m_RefLine.setPosition(REL_VIEW_X(0.5f), gnd.y - m_RefDist);
+	
+	CallbackManager::Get().Add(
+		Callback(
+			this, &m_RefDist, CallbackTrigger::OnChange,
+			[this]() { m_RefLine.setPosition(REL_VIEW_X(0.5f), m_GroundTop.y - m_RefDist); },
+			true
+		)
+	);
 
 	for (int i = 0; i < 2; i++) {
 		m_PauseBars[i].setFillColor(sf::Color::White);
@@ -165,7 +174,7 @@ void MainScreen::setupGeometry() {
 	m_LiveDistance.setFont(m_Font);
 	m_LiveDistance.setCharacterSize(REL_VIEW_Y(0.05f));
 	m_LiveDistance.setFillColor(sf::Color::White);
-	m_LiveDistance.setPosition(REL_VIEW(0.9f, 0.0f));
+	m_LiveDistance.setPosition(REL_VIEW(0.8f, 0.0f));
 
 }
 

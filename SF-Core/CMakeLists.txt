@@ -11,6 +11,7 @@ add_library (
     RoundedRectangle.cpp
     WindowManager.cpp
     App.cpp
+    Callback.cpp
 )
 
 target_compile_definitions(${LIB_NAME} PUBLIC SFML_STATIC TGUI_STATIC)

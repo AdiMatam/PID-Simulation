@@ -17,6 +17,7 @@ private:
 	sf::RectangleShape m_Yoke;
 	sf::RectangleShape m_Ground;
 	sf::RectangleShape m_RefLine;
+	Vec2f m_GroundTop;
 
 	float m_RefDist;
 	float m_CurDist;
