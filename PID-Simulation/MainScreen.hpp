@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SF-Core/Core.hpp"
+#include "LabeledEditBox.hpp"
 
 class MainScreen : public BaseScreen {
 public:
@@ -38,6 +39,11 @@ private:
 	float m_GravityAccel;
 
 	tg::Font m_Font;
+
+	Ref<LabeledEditBox> m_RefDistBundle;
+	Ref<LabeledEditBox> m_KpBundle;
+	Ref<LabeledEditBox> m_KiBundle;
+	Ref<LabeledEditBox> m_KdBundle;
 
 	// float m_Blah;
 	int COUNT;

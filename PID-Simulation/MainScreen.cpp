@@ -1,4 +1,5 @@
 #include "MainScreen.hpp"
+#include "LabeledEditBox.hpp"
 
 MainScreen::MainScreen() {
 	std::cout << "Main Screen Loaded\n";
@@ -17,12 +18,12 @@ MainScreen::MainScreen() {
 	m_PrevErr = 0.f;
 
 	m_Font = tg::Font("../../font/Barlow-Regular.ttf");
+	m_Paused = true;
 
 	setupGeometry();
 	setupWidgets();
 	// m_Blah =0.f;
-	COUNT = 0;
-	m_Paused = true;
+	// COUNT = 0;
 }
 
 void MainScreen::onEvent(const sf::Event& ev) {
@@ -30,7 +31,10 @@ void MainScreen::onEvent(const sf::Event& ev) {
 	if (keyPressed(ev, sf::Keyboard::Space)) {
 		m_Paused = !m_Paused;
 	}
-	if (keyPressed(ev, sf::Keyboard::Down)) {
+	else if (keyPressed(ev, sf::Keyboard::Q)) {
+		App::GetWindowManager(0)->close();
+	}
+	else if (keyPressed(ev, sf::Keyboard::Down)) {
 		m_RefDist -= 10.0f;
 	}
 	else if (keyPressed(ev, sf::Keyboard::Up)) {
@@ -49,10 +53,9 @@ void MainScreen::onUpdate() {
 		m_AppliedAccel = this->controlScheme();
 		this->applyInstantaneousForce(m_GravityAccel + m_AppliedAccel);
 
-		// std::cout << std::fixed << std::setprecision(2)    // Fixed-point notation with 2 decimal places
-			// << std::setw(12) << m_AppliedAccel
-			// << std::setw(12) << m_CurDist 
-			// << std::setw(12) << m_CurDist - m_RefDist << '\n';
+		std::cout << std::fixed << std::setprecision(2)    // Fixed-point notation with 2 decimal places
+			<< std::setw(12) << m_AppliedAccel
+			<< std::setw(12) << m_Dy << '\n';
 
 		// if (COUNT == 100) {
 			// std::cout << m_Blah << std::endl;
@@ -173,11 +176,13 @@ void MainScreen::setupGeometry() {
 void MainScreen::setupWidgets() {
 	tg::Gui* gui = App::GetWindowManager(0)->getGui();
 	gui->setFont(m_Font);
-	gui->setTextSize(REL_GUI_Y(0.04f));
+	gui->setTextSize(REL_GUI_Y(0.03f));
+
+	float relx = 0.80f;
 
 	auto liveDistLabel = tgui::Label::create();
-	liveDistLabel->setSize(REL_GUI(0.2, 0.07f));
-	liveDistLabel->setPosition(REL_GUI(0.75f, 0.02f));
+	liveDistLabel->setSize(REL_GUI(0.2f, 0.05f));
+	liveDistLabel->setPosition(REL_GUI(relx, 0.02f));
 	liveDistLabel->getSharedRenderer()->setTextColor(tg::Color::White);
 
 	CallbackManager::Get().Add(
@@ -185,7 +190,7 @@ void MainScreen::setupWidgets() {
 			this, &m_CurDist, CallbackTrigger::OnChange,
 			[this,liveDistLabel]() { 
 				char str[32];
-				sprintf(str, "Distance: %.2f", m_CurDist);
+				sprintf(str, "Dist:          %.2f, %.2f", m_CurDist, m_CurDist-m_RefDist);
 				liveDistLabel->setText(tg::String(str));
 			},
 			true
@@ -193,44 +198,34 @@ void MainScreen::setupWidgets() {
 	);
 	gui->add(liveDistLabel);
 
-	auto refDistText = tgui::Label::create();
-	refDistText->setSize(REL_GUI(0.1f, 0.07f));
-	refDistText->setPosition(REL_GUI(0.75f, 0.1f));
-	refDistText->setText("Ref Dist: ");
-	gui->add(refDistText);
+	m_RefDistBundle = NewRef<LabeledEditBox>(this, REL_GUI(relx, 0.07f), "Ref Dist: ", &m_RefDist);
+	m_RefDistBundle->addToRenderer(gui);
 
-	auto refDistEdit = tgui::EditBox::create();
-	refDistEdit->setSize(REL_GUI(0.1f, 0.07f));
-	refDistEdit->setPosition(REL_GUI(0.85f, 0.09f));
-	refDistEdit->onReturnKeyPress([this,refDistEdit]() { 
-		float out;
-		bool worked = refDistEdit->getText().attemptToFloat(out);
-		if (worked) {
-			m_RefDist = out;
-		}
-	});
+	m_KpBundle = NewRef<LabeledEditBox>(this, REL_GUI(relx, 0.13f), "KP: ", &m_KP);
+	m_KpBundle->addToRenderer(gui);
 
-	CallbackManager::Get().Add(
-		Callback(
-			this, &m_RefDist, CallbackTrigger::OnChange,
-			[this,refDistEdit]() { 
-				char str[16];
-				sprintf(str, "%.2f", m_RefDist);
-				refDistEdit->setText(tg::String(str));
-			},
-			true
-		)
-	);
-	gui->add(refDistEdit);
+	m_KiBundle = NewRef<LabeledEditBox>(this, REL_GUI(relx, 0.19f), "KI: ", &m_KI);
+	m_KiBundle->addToRenderer(gui);
 
+	m_KdBundle = NewRef<LabeledEditBox>(this, REL_GUI(relx, 0.25f), "KD: ", &m_KD);
+	m_KdBundle->addToRenderer(gui);
+
+
+
+
+
+	// HORRIBLE SCOPING BUT IDFC
 	{
-		refDistEdit->getSharedRenderer()->setBorderColor(tg::Color::White);
-		refDistEdit->getSharedRenderer()->setBorderColorHover(tg::Color::White);
-		refDistEdit->getSharedRenderer()->setBorderColorFocused(tg::Color::White);
-		refDistEdit->getSharedRenderer()->setBackgroundColor(tg::Color::Transparent);
-		refDistEdit->getSharedRenderer()->setBackgroundColorHover(tg::Color::Transparent);
-		refDistEdit->getSharedRenderer()->setBackgroundColorFocused(tg::Color::Transparent);
-		refDistEdit->getSharedRenderer()->setTextColor(tg::Color::White);
+		m_RefDistBundle->edit->getSharedRenderer()->setBorderColor(tg::Color::White);
+		m_RefDistBundle->edit->getSharedRenderer()->setBorderColorHover(tg::Color::White);
+		m_RefDistBundle->edit->getSharedRenderer()->setBorderColorFocused(tg::Color::White);
+		m_RefDistBundle->edit->getSharedRenderer()->setBackgroundColor(tg::Color::Transparent);
+		m_RefDistBundle->edit->getSharedRenderer()->setBackgroundColorHover(tg::Color(25, 25, 25));
+		m_RefDistBundle->edit->getSharedRenderer()->setBackgroundColorFocused(tg::Color(25, 25, 25));
+		m_RefDistBundle->edit->getSharedRenderer()->setTextColor(tg::Color::White);
+		m_RefDistBundle->edit->getSharedRenderer()->setCaretColor(tg::Color::White);
+		m_RefDistBundle->edit->getSharedRenderer()->setCaretColorHover(tg::Color::White);
+		m_RefDistBundle->edit->getSharedRenderer()->setCaretColorFocused(tg::Color::White);
 
 	}
 }
