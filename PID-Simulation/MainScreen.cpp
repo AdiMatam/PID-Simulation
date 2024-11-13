@@ -1,5 +1,6 @@
 #include "MainScreen.hpp"
 #include "LabeledEditBox.hpp"
+#include "MagModel.hpp"
 
 MainScreen::MainScreen() {
 	std::cout << "Main Screen Loaded\n";
@@ -24,6 +25,9 @@ MainScreen::MainScreen() {
 	setupWidgets();
 	// m_Blah =0.f;
 	// COUNT = 0;
+
+	double out = Frel(1.f, 250, 0.f, 8e-3);
+	std::cout << out << std::endl;
 }
 
 void MainScreen::onEvent(const sf::Event& ev) {

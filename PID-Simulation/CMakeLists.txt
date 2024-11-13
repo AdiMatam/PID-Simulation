@@ -4,6 +4,7 @@ add_executable(
     Main.cpp
     MainScreen.cpp
     LabeledEditBox.cpp
+    MagModel.cpp
 )
 
 target_compile_definitions(${PROJECT_NOM} PUBLIC SFML_STATIC TGUI_STATIC)
