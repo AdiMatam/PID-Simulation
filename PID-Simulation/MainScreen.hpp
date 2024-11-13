@@ -50,5 +50,6 @@ private:
 
 	sf::Clock m_Clock;
 	float m_RefreshRate;
+	sf::RenderStates m_States;
 
 };

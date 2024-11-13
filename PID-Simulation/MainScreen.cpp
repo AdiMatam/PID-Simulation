@@ -21,6 +21,8 @@ MainScreen::MainScreen() {
 	m_Font = tg::Font("../../font/Barlow-Regular.ttf");
 	m_Paused = true;
 
+	m_States.transform.rotate(180, REL_VIEW(0.5f,0.5f));
+
 	setupGeometry();
 	setupWidgets();
 	// m_Blah =0.f;
@@ -34,6 +36,9 @@ void MainScreen::onEvent(const sf::Event& ev) {
 	BaseScreen::onEvent(ev);
 	if (keyPressed(ev, sf::Keyboard::Space)) {
 		m_Paused = !m_Paused;
+	}
+	else if (keyPressed(ev, sf::Keyboard::R)) {
+		m_States.transform.rotate(180, REL_VIEW(0.5f, 0.5f));
 	}
 	else if (keyPressed(ev, sf::Keyboard::Q)) {
 		App::GetWindowManager(0)->close();
@@ -50,6 +55,7 @@ void MainScreen::onUpdate() {
 	sf::RenderWindow* window = App::GetWindowManager(0)->getWindow();
 	tg::Gui* gui = App::GetWindowManager(0)->getGui();
 
+
 	if (m_Clock.getElapsedTime().asMilliseconds() >= m_RefreshRate && !m_Paused) {
 		m_Clock.restart();
 		
@@ -60,16 +66,6 @@ void MainScreen::onUpdate() {
 		std::cout << std::fixed << std::setprecision(2)    // Fixed-point notation with 2 decimal places
 			<< std::setw(12) << m_AppliedAccel
 			<< std::setw(12) << m_Dy << '\n';
-
-		// if (COUNT == 100) {
-			// std::cout << m_Blah << std::endl;
-			// COUNT = 0;
-		// }
-
-		// Vec2f yoke = getCorner(&m_Yoke, m_Yoke.getGlobalBounds(), Origin::South);
-		// std::cout << yoke.y << std::endl;
-
-		// COUNT++;
 	}
 
 	CallbackManager::Get().Poll(this);
@@ -77,13 +73,13 @@ void MainScreen::onUpdate() {
 	window->clear();
 
 	if (m_Paused) {
-		window->draw(m_PauseBars[0]);
-		window->draw(m_PauseBars[1]);
+		window->draw(m_PauseBars[0], m_States);
+		window->draw(m_PauseBars[1], m_States);
 	}
 
-	window->draw(m_Ground);
-	window->draw(m_RefLine);
-	window->draw(m_Yoke);
+	window->draw(m_Ground, m_States);
+	window->draw(m_RefLine, m_States);
+	window->draw(m_Yoke, m_States);  
 
 	gui->draw();
 
@@ -101,10 +97,6 @@ float MainScreen::controlScheme() {
 		ierr = m_PrevErr + err;
 		ierr = clamp(ierr, -0.5f, 0.5f);
 	}
-	// else {
-		// printf("hmm: %d\n", COUNT);
-		// COUNT++;
-	// }
 
 	accel = m_KP * err + m_KD * derr + m_KI * ierr;
 	m_PrevErr = err; 
@@ -141,13 +133,13 @@ float MainScreen::calculateDistance() {
 }
 
 void MainScreen::setupGeometry() {
-	m_Ground.setFillColor(sf::Color::White);	
+	m_Ground.setFillColor(sf::Color(80,80,80));	
 	m_Ground.setSize(REL_VIEW(1.0f, 0.15f));
 	setOrigin(&m_Ground, m_Ground.getSize(), Origin::North | Origin::West);
 	m_Ground.setPosition(REL_VIEW(0.0f, 0.85f));
 
 	m_Yoke.setFillColor(sf::Color::Red);
-	m_Yoke.setSize( Vec2f(REL_VIEW_Y(0.2f), REL_VIEW_Y(0.2f)) );
+	m_Yoke.setSize( Vec2f(REL_VIEW_Y(0.2f)*2., REL_VIEW_Y(0.2f)) );
 	setOrigin(&m_Yoke, m_Yoke.getSize(), Origin::South);
 	
 	m_GroundNorth = getCorner(&m_Ground, m_Ground.getGlobalBounds(), Origin::North);
@@ -182,11 +174,11 @@ void MainScreen::setupWidgets() {
 	gui->setFont(m_Font);
 	gui->setTextSize(REL_GUI_Y(0.03f));
 
-	float relx = 0.80f;
+	float relx = 0.02f;
 
 	auto liveDistLabel = tgui::Label::create();
 	liveDistLabel->setSize(REL_GUI(0.2f, 0.05f));
-	liveDistLabel->setPosition(REL_GUI(relx, 0.02f));
+	liveDistLabel->setPosition(REL_GUI(relx, 0.68f));
 	liveDistLabel->getSharedRenderer()->setTextColor(tg::Color::White);
 
 	CallbackManager::Get().Add(
@@ -202,16 +194,16 @@ void MainScreen::setupWidgets() {
 	);
 	gui->add(liveDistLabel);
 
-	m_RefDistBundle = NewRef<LabeledEditBox>(this, REL_GUI(relx, 0.07f), "Ref Dist: ", &m_RefDist);
+	m_RefDistBundle = NewRef<LabeledEditBox>(this, REL_GUI(relx, 0.74f), "Ref Dist: ", &m_RefDist);
 	m_RefDistBundle->addToRenderer(gui);
 
-	m_KpBundle = NewRef<LabeledEditBox>(this, REL_GUI(relx, 0.13f), "KP: ", &m_KP);
+	m_KpBundle = NewRef<LabeledEditBox>(this, REL_GUI(relx, 0.80f), "KP: ", &m_KP);
 	m_KpBundle->addToRenderer(gui);
 
-	m_KiBundle = NewRef<LabeledEditBox>(this, REL_GUI(relx, 0.19f), "KI: ", &m_KI);
+	m_KiBundle = NewRef<LabeledEditBox>(this, REL_GUI(relx, 0.86f), "KI: ", &m_KI);
 	m_KiBundle->addToRenderer(gui);
 
-	m_KdBundle = NewRef<LabeledEditBox>(this, REL_GUI(relx, 0.25f), "KD: ", &m_KD);
+	m_KdBundle = NewRef<LabeledEditBox>(this, REL_GUI(relx, 0.92f), "KD: ", &m_KD);
 	m_KdBundle->addToRenderer(gui);
 
 
